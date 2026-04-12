@@ -61,8 +61,8 @@ void game_init(Game *g) {
     /* Initialize snake with 1 segment at center */
     first_obj = (Segment *)mem_alloc(sizeof(Segment));
     if (first_obj) {
-        first_obj->x = g->board_w / 2;
-        first_obj->y = g->board_h / 2;
+        first_obj->x = g->board_w / 2;  /* center x */
+        first_obj->y = g->board_h / 2;  /* center y */
         first_obj->next = (Segment *)0;
     }
     
