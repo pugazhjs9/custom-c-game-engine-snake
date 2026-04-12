@@ -1,4 +1,5 @@
 #include "../include/string.h"
+#include "../include/math.h"
 
 /*
  * string.c — Custom string utilities
@@ -97,10 +98,10 @@ void int_to_str(int value, char *buf, int buf_size) {
         value = -value;
     }
 
-    /* extract digits in reverse */
+    /* extract digits in reverse using standard operators */
     while (value > 0 && i < buf_size - 1) {
-        buf[i++] = (char)((value % 10) + '0');
-        value /= 10;
+        buf[i++] = (char)((value % 10) + '0');  /* digit = value % 10 */
+        value    = value / 10;                  /* value /= 10        */
     }
 
     if (is_negative && i < buf_size - 1) {
@@ -109,8 +110,8 @@ void int_to_str(int value, char *buf, int buf_size) {
 
     buf[i] = '\0';
 
-    /* reverse string */
-    for (j = 0; j < i / 2; j++) {
+    /* reverse the string */
+    for (j = 0; j < i / 2; j++) {  /* midpoint = i / 2 */
         temp = buf[j];
         buf[j] = buf[i - 1 - j];
         buf[i - 1 - j] = temp;
