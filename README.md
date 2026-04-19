@@ -31,12 +31,9 @@ A real-time terminal Snake game written in C from the ground up — without rely
 
 
 **Data flow per tick:**
-```
-keyPressed() --> readKey() --> game_handle_input() --> game_update() --> game_render()
-                                                          |                   |
-                                              mem_alloc / mem_free     screen_put_char
-                                              math_rand / math_clamp  screen_flush
-```
+
+![Data Flow Per Tick](./assets/data_flow_per_tick_fixed.svg)
+
 
 ---
 
