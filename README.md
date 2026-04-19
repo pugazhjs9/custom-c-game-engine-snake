@@ -27,29 +27,8 @@ A real-time terminal Snake game written in C from the ground up — without rely
 
 ## Architecture
 
-```
-                    +-----------+
-                    |  main.c   |
-                    | (lifecycle|
-                    |  + loop)  |
-                    +-----+-----+
-                          |
-          +---------------+---------------+
-          |                               |
-   +------+------+                +-------+-------+
-   | keyboard.c  |                |    game.c     |
-   | (termios    |--- input ----->| (state, logic,|
-   |  raw mode)  |                |  rendering)   |
-   +-------------+                +---+-+-+---+---+
-                                      | | |   |
-                    +-----------------+ | |   +----------------+
-                    |          +--------+ +--------+           |
-              +-----+----+ +--+------+  +--+------+   +-------+------+
-              | memory.c  | | string.c|  |  math.c |   |  screen.c    |
-              | (pool     | | (custom |  | (arith, |   | (ANSI escape |
-              |  allocator)| |  ops)  |  |  PRNG)  |   |  rendering)  |
-              +-----------+ +---------+  +---------+   +--------------+
-```
+![Architecture](./assets/c_module_architecture_fixed.svg)
+
 
 **Data flow per tick:**
 ```
