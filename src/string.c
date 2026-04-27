@@ -6,8 +6,7 @@
  *
  * All functions operate on null-terminated char arrays.
  * No dependency on <string.h>.
- *
- * TODO: implement
+ * All arithmetic uses math.h helpers — no raw * / % operators.
  */
 
 int str_len(const char *s) {
@@ -82,6 +81,7 @@ void int_to_str(int value, char *buf, int buf_size) {
     int i = 0, j = 0;
     int is_negative = 0;
     char temp;
+    int midpoint;
 
     if (!buf || buf_size <= 0) return;
 
@@ -98,10 +98,10 @@ void int_to_str(int value, char *buf, int buf_size) {
         value = -value;
     }
 
-    /* extract digits in reverse using standard operators */
+    /* extract digits in reverse using custom math functions */
     while (value > 0 && i < buf_size - 1) {
-        buf[i++] = (char)((value % 10) + '0');  /* digit = value % 10 */
-        value    = value / 10;                  /* value /= 10        */
+        buf[i++] = (char)(math_mod(value, 10) + '0');
+        value    = math_div(value, 10);
     }
 
     if (is_negative && i < buf_size - 1) {
@@ -111,7 +111,8 @@ void int_to_str(int value, char *buf, int buf_size) {
     buf[i] = '\0';
 
     /* reverse the string */
-    for (j = 0; j < i / 2; j++) {  /* midpoint = i / 2 */
+    midpoint = math_div(i, 2);
+    for (j = 0; j < midpoint; j++) {
         temp = buf[j];
         buf[j] = buf[i - 1 - j];
         buf[i - 1 - j] = temp;
