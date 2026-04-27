@@ -1,5 +1,4 @@
 #include "../include/screen.h"
-#include "../include/math.h"
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
