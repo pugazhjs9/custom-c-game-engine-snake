@@ -53,3 +53,21 @@ Controls:
 - Powerups (slow-mo, ghost mode)
 - Network multiplayer (TCP socket between two terminals)
 - Better AI: Hamiltonian-cycle "perfect" play, or look-ahead for self-trap avoidance
+
+## Documentation pack (Apr 29, 2026)
+Created `/app/docs/` — 13 beginner-friendly .md files for someone who knows Python/JS but not C.
+Each covers What → Why → How → Line-by-line walkthrough → Diagrams → 📢 Presentation script.
+- README.md (index + learning path + 30-min talk outline)
+- 00-c-basics.md (C survival kit: pointers, structs, headers, compilation pipeline)
+- 01-makefile.md (build system, -MMD -MP header tracking)
+- 02-memory.md (free-list allocator)
+- 03-math.md (LCG PRNG)
+- 04-string.md (int_to_str reverse-then-flip trick)
+- 05-screen.md (ANSI escape codes, alt-screen, buffered output)
+- 06-keyboard.md (termios raw mode, arrow-key 3-byte sequences)
+- 07-score.md (POSIX open/read/write — no stdio)
+- 08-game.md (linked-list snake, collision rules, render pipeline)
+- 09-menu.md (reusable list selector)
+- 10-ai.md (BFS pathfinding, parent-table reconstruction)
+- 11-main.md (game loop, multiplayer race fix, signal handling)
+~2958 lines total.
