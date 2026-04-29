@@ -77,6 +77,27 @@ int str_split(char *str, char delimiter, char tokens[][50], int max_tokens) {
     return token_count;
 }
 
+int str_to_int(const char *s) {
+    int value = 0;
+    int negative = 0;
+    int i = 0;
+
+    if (!s) return 0;
+
+    /* skip leading whitespace */
+    while (s[i] == ' ' || s[i] == '\t' || s[i] == '\n' || s[i] == '\r') i++;
+
+    if (s[i] == '-') { negative = 1; i++; }
+    else if (s[i] == '+') { i++; }
+
+    while (s[i] >= '0' && s[i] <= '9') {
+        value = math_mul(value, 10) + (s[i] - '0');
+        i++;
+    }
+
+    return negative ? -value : value;
+}
+
 void int_to_str(int value, char *buf, int buf_size) {
     int i = 0, j = 0;
     int is_negative = 0;
