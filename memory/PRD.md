@@ -54,6 +54,12 @@ Controls:
 - Network multiplayer (TCP socket between two terminals)
 - Better AI: Hamiltonian-cycle "perfect" play, or look-ahead for self-trap avoidance
 
+## Presentation deck (Apr 30, 2026)
+- Created `/app/docs/presentation.html` — single-file 22-slide Reveal.js deck (dark terminal/hacker aesthetic, JetBrains Mono + Space Grotesk, animated gradient snake banner, code syntax highlighting via Monokai).
+- Slides cover: title → challenge → architecture → Makefile → memory → math/LCG → string/int-to-str → screen/ANSI → keyboard raw-mode → score POSIX I/O → snake linked list → collision rules → visual gradient upgrade → menu → BFS intro → BFS code → main loop → multiplayer race fix → live demo cue → lessons → stats → thanks/Q&A.
+- Each slide has **speaker notes** (press `S` to pop out presenter view in Reveal).
+- No build step — just open the HTML in any browser (CDN-loaded deps).
+
 ## Snake visual upgrade (Apr 29, 2026)
 - Replaced line/corner glyphs (`═║╔╗╚╝`) with solid `█` blocks for snake body.
 - Per-segment **gradient color**: head = darkest, tail = lightest, sampled from an 8-step 256-color ramp.
