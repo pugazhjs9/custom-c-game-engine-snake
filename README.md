@@ -108,6 +108,26 @@ Open your browser and navigate to `http://localhost:3000`.
 
 ---
 
+## 💻 Terminal C-Engine (Legacy)
+
+Before evolving into a full web application, SnakeOS started as a raw, dependency-free C game engine designed to run natively in the terminal.
+
+### C-Engine Highlights
+- **Custom Memory Allocator**: Replaced `malloc`/`free` with a static-pool allocator, first-fit allocation, and coalescing.
+- **Custom Standard Library**: Implemented string operations (`len`, `copy`, `concat`, `itoa`) and math functions (LCG for PRNG) from scratch.
+- **Terminal Rendering Engine**: Handled raw ANSI escape sequences, dirty-rectangle updates, and buffered flushing to prevent flicker.
+- **Non-Blocking I/O**: Managed real-time keypresses natively using POSIX `termios` and `fcntl`.
+
+### Build and Run Native C Engine
+If you're interested in the low-level systems programming aspect, you can still compile and run the original C binary on macOS/Linux:
+
+```bash
+make clean && make
+./snake
+```
+
+---
+
 ## 📜 License
 
 This project is open source and available under the MIT License.
