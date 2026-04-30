@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Snake in C — from scratch</title>
+
+  <!-- Reveal.js (via CDN) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/black.css" id="theme" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+
+  <!-- Terminal-y font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root{
+      --ink:#eaf3ec;
+      --bg:#0a0f0d;
+      --accent:#7cff9a;
+      --accent-dim:#3fae58;
+      --warn:#ffb454;
+      --pink:#ff6ea9;
+      --blue:#66d9ef;
+      --dim:#7d8a85;
+    }
+    .reveal { background:var(--bg); font-family:'JetBrains Mono',ui-monospace,monospace; color:var(--ink); }
+    .reveal .slides { text-align:left; }
+    .reveal h1, .reveal h2, .reveal h3, .reveal h4 { font-family:'Space Grotesk',sans-serif; font-weight:700; text-transform:none; letter-spacing:-0.02em; color:var(--ink); }
+    .reveal h1 { font-size:3.2em; line-height:1.05; }
+    .reveal h2 { font-size:2.1em; color:var(--accent); }
+    .reveal h3 { font-size:1.3em; color:var(--blue); }
+    .reveal p, .reveal li { font-size:0.75em; line-height:1.5; }
+    .reveal code { background:#14201a; color:var(--accent); padding:2px 6px; border-radius:4px; font-size:0.85em; }
+    .reveal pre { box-shadow:none; background:#0f1715; border-left:3px solid var(--accent-dim); }
+    .reveal pre code { font-size:0.58em; line-height:1.45; padding:18px 22px; }
+    .reveal .slide-number { color:var(--accent-dim); }
+    .reveal .progress { color:var(--accent); }
+    .reveal a { color:var(--accent); }
+    .reveal ul, .reveal ol { margin-left:1.2em; }
+    .reveal ul li::marker { color:var(--accent); }
+
+    /* Terminal-frame look */
+    .termbox{
+      background:#0d1614;
+      border:1px solid #1e2d28;
+      border-radius:8px;
+      padding:22px 28px;
+      box-shadow:0 0 0 1px rgba(124,255,154,0.06), 0 20px 60px -20px rgba(0,0,0,0.8);
+      position:relative;
+    }
+    .termbox::before{
+      content:"● ● ●";
+      color:#2d3935; letter-spacing:6px;
+      position:absolute; top:6px; left:14px; font-size:0.6em;
+    }
+    .kicker{ color:var(--accent); font-size:0.6em; letter-spacing:0.35em; text-transform:uppercase; margin-bottom:14px; }
+    .tag{ display:inline-block; padding:3px 10px; border:1px solid var(--accent-dim); color:var(--accent); border-radius:999px; font-size:0.55em; letter-spacing:0.15em; margin-right:6px; text-transform:uppercase; }
+    .strike{ color:var(--pink); text-decoration:line-through; }
+    .dim{ color:var(--dim); }
+    .blue{ color:var(--blue); }
+    .warn{ color:var(--warn); }
+    .pink{ color:var(--pink); }
+    .accent{ color:var(--accent); }
+
+    .grid-2{ display:grid; grid-template-columns:1fr 1fr; gap:32px; }
+    .grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; }
+    .card{ border:1px solid #1e2d28; border-radius:8px; padding:18px; background:#0d1614; }
+
+    .asciiart{ color:var(--accent); font-size:0.6em; line-height:1.25; white-space:pre; }
+    .snake-demo{ font-size:0.75em; font-family:'JetBrains Mono',monospace; white-space:pre; line-height:1.0; }
+    .snake-demo .head{ color:#22863a; }
+    .snake-demo .b1{ color:#2ea043; } .snake-demo .b2{ color:#3fb950; }
+    .snake-demo .b3{ color:#56d364; } .snake-demo .b4{ color:#7ee787; }
+    .snake-demo .b5{ color:#a8f0b6; } .snake-demo .tail{ color:#d6ffde; }
+    .snake-demo .food{ color:#ff4a4a; }
+
+    .title-hero{
+      position:relative; padding:0; margin:0;
+    }
+    .title-hero .over{
+      font-family:'JetBrains Mono',monospace;
+      color:var(--dim); font-size:0.55em; letter-spacing:0.4em; text-transform:uppercase;
+    }
+    .title-hero h1 span.highlight{
+      background:linear-gradient(90deg, var(--accent), var(--blue));
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+    .tiny{ font-size:0.55em; color:var(--dim); letter-spacing:0.15em; text-transform:uppercase; }
+    .huge{ font-size:4em; font-weight:800; }
+    table{ width:100%; border-collapse:collapse; font-size:0.75em; }
+    td, th{ padding:8px 12px; border-bottom:1px solid #1e2d28; text-align:left; }
+    th{ color:var(--accent); font-weight:600; }
+    .kbd{ background:#1e2d28; border:1px solid #2e4038; border-bottom:3px solid #2e4038; border-radius:4px; padding:1px 8px; font-size:0.8em; }
+
+    /* Animated gradient snake banner for title */
+    @keyframes hueshift { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
+    .snake-banner{ animation: hueshift 14s linear infinite; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ============ 1. TITLE ============ -->
+<section data-background-color="#070b09">
+  <div class="title-hero">
+    <div class="over">emergent labs · terminal game dev</div>
+    <h1 style="margin-top:20px">Snake in <span class="highlight">C</span><br/><span class="dim" style="font-size:0.4em;font-weight:400">— from the metal up —</span></h1>
+    <div class="snake-demo snake-banner" style="margin-top:30px">
+<span class="head">█</span><span class="b1">█</span><span class="b2">█</span><span class="b3">█</span><span class="b4">█</span><span class="b5">█</span><span class="tail">█</span>        <span class="food">●</span>
+    </div>
+    <div style="margin-top:26px" class="dim">
+      A terminal game written with <span class="strike">malloc</span>, <span class="strike">&lt;string.h&gt;</span>, <span class="strike">&lt;math.h&gt;</span>, <span class="strike">fopen</span> — all hand-rolled.
+    </div>
+  </div>
+  <aside class="notes">
+    Welcome. This is a classic Snake game, written from scratch in C. What makes it interesting is what we ~didn't~ use: no malloc, no &lt;string.h&gt;, no &lt;math.h&gt;, no fopen. We rolled all of it ourselves. By the end of this talk you'll understand every layer, from the 64 KB memory pool up to the BFS-driven auto-play AI.
+  </aside>
+</section>
+
+<!-- ============ 2. THE CHALLENGE ============ -->
+<section>
+  <div class="kicker">premise</div>
+  <h2>The challenge</h2>
+  <p>Build a full-featured Snake game in C <span class="accent">without</span> the beginner-friendly crutches.</p>
+  <div class="grid-2" style="margin-top:30px">
+    <div class="card">
+      <div class="tiny accent">what's banned</div>
+      <ul style="margin-top:10px">
+        <li><span class="strike">malloc</span> / <span class="strike">free</span></li>
+        <li><span class="strike">&lt;string.h&gt;</span> — <code>strlen</code>, <code>strcpy</code>, …</li>
+        <li><span class="strike">&lt;math.h&gt;</span> — random, abs, clamp</li>
+        <li><span class="strike">fopen / fprintf</span> for save files</li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="tiny blue">what we built anyway</div>
+      <ul style="margin-top:10px">
+        <li>3 modes · 3 difficulties</li>
+        <li>Persistent per-mode high scores</li>
+        <li>BFS-driven AI auto-play</li>
+        <li>2-player local with race-fair input</li>
+        <li>Gradient snake that shimmers over time</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">
+    Why self-impose these restrictions? To actually understand what those library functions do. Once you write malloc yourself, you'll never look at it the same way.
+  </aside>
+</section>
+
+<!-- ============ 3. ARCHITECTURE ============ -->
+<section>
+  <div class="kicker">architecture</div>
+  <h2>10 C files — one binary</h2>
+  <pre class="asciiart" style="font-size:0.55em">
+                    ┌─────────────┐
+                    │   main.c    │  ← entry point, game loop
+                    └──┬───┬───┬──┘
+              ┌────────┘   │   └────────┐
+              ▼            ▼            ▼
+        ┌──────────┐ ┌──────────┐ ┌──────────┐
+        │  menu.c  │ │  game.c  │ │   ai.c   │
+        └──────────┘ └────┬─────┘ └─────┬────┘
+                          │             │
+        ┌─────────────────┼─────────────┘
+        ▼                 ▼
+   ┌─────────┐      ┌─────────┐
+   │ score.c │      │screen.c │    keyboard.c
+   └────┬────┘      └─────────┘
+        │
+        ▼
+   ┌──────────┬──────────┬──────────┐
+   │ string.c │  math.c  │ memory.c │   ← foundations
+   └──────────┴──────────┴──────────┘
+  </pre>
+  <p class="dim" style="font-size:0.7em">The bottom layer has <b class="accent">zero dependencies</b>. Each module is a public <code>.h</code> (what it offers) and a private <code>.c</code> (how it does it).</p>
+  <aside class="notes">
+    We have ten .c files. At the bottom: memory, math, string — they depend on nothing. Everything else builds upward. Clean separation of concerns, same as a Python package but explicit.
+  </aside>
+</section>
+
+<!-- ============ 4. Makefile ============ -->
+<section>
+  <div class="kicker">01 · build</div>
+  <h2>The Makefile</h2>
+  <p>Turns 10 <code>.c</code> files into <code>./snake</code>, rebuilds only what changed.</p>
+  <pre><code class="language-makefile">CFLAGS = -Wall -Wextra -pedantic -std=c99 \
+         -D_DEFAULT_SOURCE -I include -MMD -MP
+
+$(TARGET): $(OBJS)
+    $(CC) $(CFLAGS) -o $@ $^
+
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
+    $(CC) $(CFLAGS) -c -o $@ $&lt;</code></pre>
+  <div class="grid-3" style="margin-top:12px">
+    <div class="card"><span class="tiny accent">-Wall -Wextra</span><p style="margin:8px 0 0;font-size:0.7em">Crank warnings. Catch bugs early.</p></div>
+    <div class="card"><span class="tiny accent">-MMD -MP</span><p style="margin:8px 0 0;font-size:0.7em">Auto-track headers. Edit <code>game.h</code> → everything that includes it rebuilds.</p></div>
+    <div class="card"><span class="tiny accent">-I include</span><p style="margin:8px 0 0;font-size:0.7em">Where to look for <code>#include</code>.</p></div>
+  </div>
+  <aside class="notes">
+    Make is dumb but effective. It sees which .c files are newer than their .o files, rebuilds just those, then re-links. The -MMD -MP flags are the hero: they auto-generate dependency files so header changes trigger correct rebuilds. We learned that the hard way.
+  </aside>
+</section>
+
+<!-- ============ 5. Memory ============ -->
+<section>
+  <div class="kicker">02 · memory</div>
+  <h2>A 64 KB malloc, by hand</h2>
+  <p>Grab one big byte array. Track usage with a <span class="accent">linked list of headers</span> living inside the pool.</p>
+  <pre class="asciiart" style="font-size:0.55em;margin-top:10px">
+┌──────────────────────────────────────────────────────────┐
+├────────────┬────────────┬────────────┬────────────┬──────┤
+│ BlockHeader│  user data │ BlockHeader│  user data │ ...  │
+│ size|free  │  (n bytes) │ size|free  │  (n bytes) │      │
+│ next─┐     │            │ next─┐     │            │      │
+└──────┼─────┴────────────┴──────┼─────┴────────────┴──────┘
+       └──────────────────────────┘
+  </pre>
+  <div class="grid-2" style="margin-top:14px">
+    <div>
+      <div class="tiny accent">alloc</div>
+      <p style="font-size:0.7em">Walk list, first-fit, split remainder, return pointer <b>past</b> the header.</p>
+    </div>
+    <div>
+      <div class="tiny accent">free</div>
+      <p style="font-size:0.7em">Step back 16 B to find header, flip <code>free=1</code>, merge adjacent free neighbours.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    64 KB is our entire memory budget. Every snake segment, every linked-list node, comes from this pool. Inside the pool we keep a linked list of bookkeeping headers — each says "I'm this big, I'm free or used, next is at X". Eighty lines of C.
+  </aside>
+</section>
+
+<!-- ============ 6. Math / LCG ============ -->
+<section>
+  <div class="kicker">03 · math</div>
+  <h2>A PRNG from scratch</h2>
+  <p>No <code>rand()</code>. We use a <span class="accent">Linear Congruential Generator</span> — the simplest pseudo-random algorithm in existence.</p>
+  <pre><code class="language-c">int math_rand(int lo, int hi) {
+    g_seed = (g_seed * 1103515245 + 12345) & 0x7fffffff;
+    int range = hi - lo + 1;
+    return lo + (int)(g_seed % range);
+}</code></pre>
+  <div class="grid-2" style="margin-top:18px">
+    <div class="card">
+      <span class="tiny blue">the formula</span>
+      <p style="margin-top:8px;font-size:0.75em">next = (cur · <span class="accent">a</span> + <span class="accent">c</span>) mod <span class="accent">m</span></p>
+      <p style="font-size:0.7em;color:var(--dim)">a = 1,103,515,245 &nbsp;·&nbsp; c = 12,345 &nbsp;·&nbsp; m = 2³¹</p>
+    </div>
+    <div class="card">
+      <span class="tiny blue">seeded with</span>
+      <p style="margin-top:8px;font-size:0.75em"><code>time(NULL)</code> at startup.</p>
+      <p style="font-size:0.7em;color:var(--dim)">Different second → different food positions.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    Every call multiplies by a huge number, adds a small one, and chops to 31 bits. The output looks random but is fully deterministic given the seed. Same algorithm POSIX's rand uses. Perfect for a snake game; don't use it for passwords.
+  </aside>
+</section>
+
+<!-- ============ 7. Strings ============ -->
+<section>
+  <div class="kicker">04 · string</div>
+  <h2>int &rarr; string, the hard way</h2>
+  <p>A string in C is just <span class="accent">a sequence of bytes ending in <code>\0</code></span>. So we hand-rolled <code>str_len</code>, <code>str_copy</code>, and the key one: <code>int_to_str</code>.</p>
+  <pre><code class="language-c">// digits come out in REVERSE — then we flip
+while (value > 0) {
+    buf[i++] = (value % 10) + '0';   // last digit → ASCII
+    value = value / 10;              // chop it off
+}
+// reverse in place
+for (j = 0; j &lt; i/2; j++) swap(buf[j], buf[i-1-j]);</code></pre>
+  <p class="dim" style="font-size:0.7em; margin-top:14px">
+    423 &nbsp;→&nbsp; <code>"3","2","4"</code> &nbsp;→&nbsp; reverse &nbsp;→&nbsp; <code>"423"</code> ✅<br/>
+    <span class="blue">Why it matters:</span> this is exactly how we serialise high scores to disk. No <code>printf</code> needed.
+  </p>
+  <aside class="notes">
+    The "+ '0'" trick: '0' is ASCII 48, so digit + '0' gives the character. Extract digits with mod 10 and divide 10 — they come out in reverse — then swap-loop to fix. It's how formatted I/O works under the hood.
+  </aside>
+</section>
+
+<!-- ============ 8. Screen / ANSI ============ -->
+<section>
+  <div class="kicker">05 · screen</div>
+  <h2>The terminal as a canvas</h2>
+  <p>We draw by printing <span class="accent">ANSI escape codes</span> — magic byte sequences the terminal interprets as commands instead of text.</p>
+  <table style="margin-top:16px">
+    <tr><th>Sequence</th><th>What it does</th></tr>
+    <tr><td><code>\x1b[2J</code></td><td>Clear entire screen</td></tr>
+    <tr><td><code>\x1b[5;10H</code></td><td>Move cursor to row 5, col 10</td></tr>
+    <tr><td><code>\x1b[38;5;196m</code></td><td>Set foreground to palette color 196 (red)</td></tr>
+    <tr><td><code>\x1b[?25l</code></td><td>Hide the cursor</td></tr>
+    <tr><td><code>\x1b[?1049h</code></td><td>Switch to alternate screen (!)</td></tr>
+  </table>
+  <p class="dim" style="font-size:0.7em; margin-top:18px">
+    Alt-screen is why your shell history isn't trashed after you quit. And we flush <code>stdout</code> once per frame (64 KB buffer) → zero flicker.
+  </p>
+  <aside class="notes">
+    That's all "graphics" is here: printf magic strings. Two tricks make it smooth — alternate screen buffer so we don't stomp the user's shell, and a 64 KB output buffer we flush once per frame so no partial frames ever render.
+  </aside>
+</section>
+
+<!-- ============ 9. Keyboard raw mode ============ -->
+<section>
+  <div class="kicker">06 · keyboard</div>
+  <h2>Raw mode — every key, instantly</h2>
+  <p>Default terminals wait for Enter. We need each key the moment it's pressed.</p>
+  <pre><code class="language-c">raw.c_lflag &= ~(ICANON | ECHO);   // turn off line buffering + echo
+raw.c_cc[VMIN]  = 0;
+raw.c_cc[VTIME] = 0;
+tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);</code></pre>
+  <div class="card" style="margin-top:18px">
+    <div class="tiny blue">the arrow-key trick</div>
+    <p style="margin-top:8px;font-size:0.7em">
+      Arrow keys arrive as a <b>3-byte escape sequence</b>: <code>ESC [ A</code> = Up. We detect the ESC, read 2 more bytes, and map to custom codes <code>128–131</code> — <b class="accent">outside ASCII</b> so they never collide with WASD. Critical for 2-player mode.
+    </p>
+  </div>
+  <aside class="notes">
+    Two changes: raw mode via termios gives us each key as a byte, non-blocking via fcntl so read returns immediately if there's nothing. Arrow keys are 3 bytes — we detect the ESC, peek two more, and return code 128 for up, 129 for down, etc. Outside ASCII so WASD and arrows never confuse each other.
+  </aside>
+</section>
+
+<!-- ============ 10. Score / POSIX IO ============ -->
+<section>
+  <div class="kicker">07 · score</div>
+  <h2>Persistence, syscall-level</h2>
+  <p>No <code>fopen</code>. We use raw <code>open / read / write / close</code> from <code>&lt;unistd.h&gt;</code>.</p>
+  <pre><code class="language-c">// SAVE
+fd = open(path, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+int_to_str(score, buf, 32);
+write(fd, buf, str_len(buf));
+close(fd);
+
+// LOAD
+fd = open(path, O_RDONLY);
+n  = read(fd, buf, 31);
+close(fd);
+buf[n] = '\0';
+return str_to_int(buf);</code></pre>
+  <p class="dim" style="font-size:0.7em;margin-top:14px">
+    One file per mode: <code>.snake_highscore_easy</code>, <code>.snake_highscore_ai</code>, … The contents are literally <b>the digits</b>. Separate records for Easy / Normal / Hard / AI / 2-Player.
+  </p>
+  <aside class="notes">
+    A file descriptor is just an int — the OS's handle to your open file. We open, write the ASCII digits directly, close. The pair int_to_str/str_to_int does the serialisation. No formatting library needed.
+  </aside>
+</section>
+
+<!-- ============ 11. Snake data structure ============ -->
+<section>
+  <div class="kicker">08 · game</div>
+  <h2>The snake is a linked list</h2>
+  <pre class="asciiart" style="font-size:0.55em">
+       ┌──────┐    ┌──────┐    ┌──────┐    ┌──────┐
+ head→ │ 10,5 │ →  │  9,5 │ →  │  8,5 │ →  │  7,5 │ → NULL
+       └──────┘    └──────┘    └──────┘    └──────┘
+           ▲                                    ▲
+       head ptr                            tail ptr  (cached!)
+  </pre>
+  <p style="margin-top:16px">Each tick:</p>
+  <ol>
+    <li><b class="accent">Prepend</b> a new head segment (<code>mem_alloc</code>)</li>
+    <li>Did we eat food? &nbsp;<span class="dim">— keep the tail → snake grows</span></li>
+    <li>Otherwise? &nbsp;<span class="dim">— <code>mem_free</code> the old tail → length unchanged</span></li>
+  </ol>
+  <p class="dim" style="font-size:0.7em;margin-top:14px">
+    <b class="accent">O(1)</b> at both ends thanks to the cached tail pointer.
+  </p>
+  <aside class="notes">
+    Head and tail pointers let us do constant-time operations at both ends. The snake is literally a linked list in the 64 KB pool. Growing is "don't free the tail"; shrinking is free it. That's the whole data model.
+  </aside>
+</section>
+
+<!-- ============ 12. Collision rules ============ -->
+<section>
+  <div class="kicker">08 · game</div>
+  <h2>Collision rules (every tick)</h2>
+  <p>For each snake's candidate new-head cell, check against…</p>
+  <div class="grid-3" style="margin-top:16px">
+    <div class="card"><div class="tiny accent">1 · self</div><p style="margin-top:8px;font-size:0.7em">own body, <b class="warn">minus</b> tail if not growing (tail will move out of the way)</p></div>
+    <div class="card"><div class="tiny accent">2 · cross</div><p style="margin-top:8px;font-size:0.7em">other snake's body (multi mode), same tail rule</p></div>
+    <div class="card"><div class="tiny accent">3 · head-to-head</div><p style="margin-top:8px;font-size:0.7em">same destination cell → <b class="pink">mutual KO → draw</b></p></div>
+  </div>
+  <p class="dim" style="font-size:0.7em;margin-top:22px">
+    Walls wrap around (snake re-enters the opposite side). Speed ramps down by 4 ms per food eaten, capped at 40 ms.
+  </p>
+  <aside class="notes">
+    The subtle bit is the tail exclusion: if the snake isn't growing this tick, its tail is going to move out of the way — so we don't count it as a collision. That lets the snake chase its own tail at distance 1 safely, which is the classic "snake rule".
+  </aside>
+</section>
+
+<!-- ============ 13. Visual upgrade ============ -->
+<section>
+  <div class="kicker">08 · game · visual</div>
+  <h2>Solid blocks + gradient + hue cycle</h2>
+  <div class="grid-2" style="margin-top:18px">
+    <div>
+      <div class="tiny accent">before</div>
+      <pre class="snake-demo" style="color:#3fb950">╔══╗
+║  ╚═══▶</pre>
+      <p class="dim" style="font-size:0.65em">Corner glyphs (<code>╔╗╚╝═║</code>), one flat color.</p>
+    </div>
+    <div>
+      <div class="tiny accent">after</div>
+      <div class="snake-demo" style="font-size:1.4em"><span class="head">█</span><span class="b1">█</span><span class="b2">█</span><span class="b3">█</span><span class="b4">█</span><span class="b5">█</span><span class="tail">█</span></div>
+      <p class="dim" style="font-size:0.65em">Head = darkest → tail = lightest, ramp <b class="accent">rotates</b> every ~18 ticks.</p>
+    </div>
+  </div>
+  <pre style="margin-top:18px"><code class="language-c">static const int RAMPS[6][8] = {
+  {22,28,34,40,46,82,118,154},    // greens
+  {23,30,37,44,51,87,123,159},    // cyans
+  {18,19,20,21,27,33,39,45},      // blues
+  {53,54,55,56,57,99,135,171},    // purples
+  {88,124,160,196,197,203,209,217},  // reds
+  {94,130,166,172,208,214,220,223},  // oranges
+};</code></pre>
+  <aside class="notes">
+    We swapped the clever corner glyphs for a uniform block character. Each segment gets a color from an 8-step palette ramp — head darkest, tail lightest. The active ramp rotates over time, so the snake shimmers through greens, blues, purples. In 2-player mode P2 is offset 3 ramps so the two snakes never share a hue.
+  </aside>
+</section>
+
+<!-- ============ 14. Menu ============ -->
+<section>
+  <div class="kicker">09 · menu</div>
+  <h2>Two screens, one function</h2>
+  <div class="grid-2">
+    <pre class="asciiart" style="font-size:0.55em">
+╔════════════════════╗
+║   S N A K E        ║
+║                    ║
+║ ▶ Single Player    ║
+║   AI Auto-play     ║
+║   2 Player Local   ║
+║   Quit             ║
+║                    ║
+║ "One snake. WASD.  ║
+║  Or Arrow keys."   ║
+╚════════════════════╝
+    </pre>
+    <div>
+      <p>Same function draws both screens — just different string arrays.</p>
+      <pre style="margin-top:10px"><code class="language-c">const char *MODE_ITEMS[] = {
+  "Single Player",
+  "AI Auto-play",
+  "2 Player Local",
+  "Quit"
+};
+const char *DIFF_ITEMS[] = {
+  "Easy","Normal","Hard","Back"
+};</code></pre>
+      <p class="dim" style="font-size:0.65em">DRY principle in C. Navigate with <span class="kbd">W</span><span class="kbd">S</span> or <span class="kbd">↑</span><span class="kbd">↓</span>, confirm with <span class="kbd">Enter</span>.</p>
+    </div>
+  </div>
+  <aside class="notes">
+    One reusable select_from_list function handles both screens — we just pass different arrays. The loop sleeps 10 ms when idle so it doesn't pin a CPU, and only redraws when the highlight actually moves — no flicker.
+  </aside>
+</section>
+
+<!-- ============ 15. BFS intro ============ -->
+<section>
+  <div class="kicker">10 · ai</div>
+  <h2>AI mode: BFS pathfinding</h2>
+  <p>Every tick, the AI runs a <b class="accent">breadth-first search</b> from head → food.<br/>The first move along the shortest path is the action.</p>
+  <pre class="asciiart" style="font-size:0.55em;margin-top:18px">
+  before BFS                   after BFS (ripple)
+  . . . . .                    3 . . . .
+  . . . F .                    2 1 . . .
+  . . H . .        →           1 H 1 . .     numbers = distance
+  . . . . .                    2 1 2 . .
+  . . . . .                    3 . . . .
+  </pre>
+  <p class="dim" style="font-size:0.7em;margin-top:12px">
+    Like dropping a stone in water. The <b>first cell</b> of the reconstructed path tells us which direction to move <b>right now</b>.
+  </p>
+  <aside class="notes">
+    BFS is the textbook shortest-path algorithm on an unweighted grid. Drop a stone in water; ripples spread outward one step at a time. We stop as soon as the ripple hits the food cell — that's our shortest path.
+  </aside>
+</section>
+
+<!-- ============ 16. BFS code ============ -->
+<section>
+  <div class="kicker">10 · ai · implementation</div>
+  <h2>One queue, one parent table</h2>
+  <pre><code class="language-c">qx[qtail] = hx;  qy[qtail] = hy;  qtail++;
+visited[hy][hx] = 1;
+
+while (qhead &lt; qtail) {
+    cx = qx[qhead]; cy = qy[qhead]; qhead++;
+    if (cx == fx && cy == fy) break;          // ← found food
+
+    for (d = 0; d &lt; 4; d++) {
+        nx = wrap_x(cx + DX[d], board_w);
+        ny = wrap_y(cy + DY[d], board_h);
+        if (visited[ny][nx] || blocked(nx, ny)) continue;
+
+        visited[ny][nx] = 1;
+        parent[ny][nx]  = d;                  // ← remember the move
+        qx[qtail] = nx; qy[qtail] = ny; qtail++;
+    }
+}
+// walk back from food to head → first_dir is the answer</code></pre>
+  <p class="dim" style="font-size:0.7em;margin-top:12px">
+    Static arrays (no allocation). Wraparound-aware. Fallback to "any safe direction" if no path exists. <b class="accent">Runs in microseconds</b> per tick.
+  </p>
+  <aside class="notes">
+    Queue is two parallel arrays with head/tail indices — no dynamic allocation. We record the direction used to enter each cell in a parent table. When we reach the food, we walk backwards using parent[] and the first move of that walk is what we return.
+  </aside>
+</section>
+
+<!-- ============ 17. Main loop ============ -->
+<section>
+  <div class="kicker">11 · main</div>
+  <h2>The game loop (per tick)</h2>
+  <pre><code class="language-c">while (1) {
+    if (resize_flag) redraw_everything();
+
+    p1_pending = -1;  p2_pending = -1;
+    while (keyPressed()) {                    // DRAIN all bytes
+        int key = readKey();
+        // route 'w/a/s/d' → p1_pending, arrows → p2_pending
+    }
+
+    if (mode == MODE_AI) p1_pending = ai_decide(game);
+
+    game_set_player_dir(game, 1, p1_pending);
+    game_set_player_dir(game, 2, p2_pending);
+    game_update(game);
+    game_render(game);
+
+    // interruptible sleep (10 ms chunks, break on input)
+    sleep_until_next_tick();
+}</code></pre>
+  <aside class="notes">
+    Every tick: drain all pending input bytes, let the AI decide if in AI mode, apply the pending directions, update the world, render, sleep until the next tick. The sleep is interruptible so we can react to key presses instantly instead of waiting the whole 200 ms.
+  </aside>
+</section>
+
+<!-- ============ 18. Multiplayer race fix ============ -->
+<section>
+  <div class="kicker">11 · main · the subtle bug</div>
+  <h2 class="pink">Same-millisecond keypress race</h2>
+  <p>Both players press at once. Both bytes arrive in the buffer in the same <code>read()</code>. Naive code reads <b>one byte per tick</b> → one player starves.</p>
+  <pre style="margin-top:16px"><code class="language-c">// FIX: per-player slots + drain ALL bytes
+int p1_pending = -1, p2_pending = -1;
+while (keyPressed()) {
+    int k = readKey();
+    switch (k) {
+      case 'w': p1_pending = DIR_UP;   break;
+      case 's': p1_pending = DIR_DOWN; break;
+      // ...
+      case KEY_UP:   p2_pending = DIR_UP;   break;
+      case KEY_DOWN: p2_pending = DIR_DOWN; break;
+      // ...
+    }
+}
+// Both applied atomically at update time</code></pre>
+  <p class="dim" style="font-size:0.7em;margin-top:14px">
+    Within <b>one</b> player, last press wins. Across players, <b class="accent">both</b> get their move every tick.
+  </p>
+  <aside class="notes">
+    This was the trickiest bug. If you only read one byte per tick, when both players press together one byte sits in the buffer for a tick — that player feels laggy. The fix is two things: drain every byte per tick, AND route each into a per-player slot so P1's latest doesn't overwrite P2's. The distinct arrow key codes from keyboard.c make the routing unambiguous.
+  </aside>
+</section>
+
+<!-- ============ 19. LIVE DEMO ============ -->
+<section data-background-color="#070b09">
+  <div class="kicker">live demo</div>
+  <h1 style="margin-top:20px;font-size:2.6em">$ <span class="accent">make && ./snake</span><span class="snake-banner" style="color:var(--accent);animation:blink 1s steps(2) infinite">_</span></h1>
+  <style>@keyframes blink { 50% { opacity:0; } }</style>
+  <div class="grid-3" style="margin-top:40px">
+    <div class="card"><div class="tiny accent">Single Player</div><p style="margin-top:8px;font-size:0.7em">WASD or arrows. Eat red <span class="food" style="color:var(--pink)">●</span>. Chase gold <span class="warn">★</span>.</p></div>
+    <div class="card"><div class="tiny accent">AI Auto-play</div><p style="margin-top:8px;font-size:0.7em">Watch BFS solve the board for you.</p></div>
+    <div class="card"><div class="tiny accent">2 Player Local</div><p style="margin-top:8px;font-size:0.7em">P1 = <span class="kbd">W</span><span class="kbd">A</span><span class="kbd">S</span><span class="kbd">D</span>, P2 = arrows. First to die loses.</p></div>
+  </div>
+  <aside class="notes">
+    [LIVE DEMO] Launch the game. Show a quick single-player round — point out the gradient shimmer. Hit M for menu, select AI, watch it path-find to food. Die, show high score persists across runs: quit, re-launch, HI still displays the last score.
+  </aside>
+</section>
+
+<!-- ============ 20. Lessons ============ -->
+<section>
+  <div class="kicker">retrospective</div>
+  <h2>Lessons I'd pin to the wall</h2>
+  <ul style="margin-top:24px">
+    <li><b class="accent">"A string is just bytes ending in zero."</b><br/><span class="dim" style="font-size:0.85em">Internalising this collapses most of C's "weirdness" for a Python/JS dev.</span></li>
+    <li style="margin-top:14px"><b class="accent">Stable input with a pending-dir buffer.</b><br/><span class="dim" style="font-size:0.85em">Decouples input frequency from tick rate. Essential for smooth gameplay.</span></li>
+    <li style="margin-top:14px"><b class="accent">Always enable <code>-MMD -MP</code>.</b><br/><span class="dim" style="font-size:0.85em">Stale <code>.o</code> files after header changes will ruin your Saturday.</span></li>
+    <li style="margin-top:14px"><b class="accent">Low-level I/O is simpler than formatted I/O.</b><br/><span class="dim" style="font-size:0.85em">open/read/write is 4 syscalls. fopen/fprintf is thousands of lines of machinery.</span></li>
+  </ul>
+  <aside class="notes">
+    If you only take four things from this talk: strings are just bytes ending in zero, decouple input from tick rate with a buffer, always track headers in your Makefile, and the lowest-level I/O is often the easiest to reason about.
+  </aside>
+</section>
+
+<!-- ============ 21. Stats ============ -->
+<section>
+  <div class="kicker">by the numbers</div>
+  <h2>The whole project</h2>
+  <div class="grid-3" style="margin-top:30px">
+    <div class="card" style="text-align:center"><div class="huge accent">~1.4k</div><div class="tiny dim">lines of C</div></div>
+    <div class="card" style="text-align:center"><div class="huge blue">10</div><div class="tiny dim">modules (.c / .h pairs)</div></div>
+    <div class="card" style="text-align:center"><div class="huge warn">0</div><div class="tiny dim">heap allocations from libc</div></div>
+    <div class="card" style="text-align:center"><div class="huge pink">64</div><div class="tiny dim">KB — our entire memory budget</div></div>
+    <div class="card" style="text-align:center"><div class="huge accent">&lt;1ms</div><div class="tiny dim">BFS per tick on 200×60</div></div>
+    <div class="card" style="text-align:center"><div class="huge blue">~2.9k</div><div class="tiny dim">lines of companion docs</div></div>
+  </div>
+  <aside class="notes">
+    About 1400 lines of C, ten modules, zero heap allocations from the standard library, 64 KB total memory budget, BFS runs in well under a millisecond, and we wrote about 2900 lines of beginner-friendly docs to explain it all.
+  </aside>
+</section>
+
+<!-- ============ 22. Thanks / QA ============ -->
+<section data-background-color="#070b09">
+  <div class="kicker">fin</div>
+  <h1 style="font-size:3.2em">Thank you.</h1>
+  <div class="snake-demo snake-banner" style="font-size:1.6em;margin-top:24px">
+<span class="head">█</span><span class="b1">█</span><span class="b2">█</span><span class="b3">█</span><span class="b4">█</span><span class="b5">█</span><span class="tail">█</span>  <span class="food">●</span>
+  </div>
+  <p style="margin-top:40px;font-size:1em;color:var(--dim)">
+    <span class="accent">→</span> docs live at <code>/app/docs/</code><br/>
+    <span class="accent">→</span> source at <code>/app/src/</code> &nbsp;·&nbsp; headers at <code>/app/include/</code><br/>
+    <span class="accent">→</span> build &amp; play: <code>cd /app &amp;&amp; make &amp;&amp; ./snake</code>
+  </p>
+  <h3 style="margin-top:36px">Questions?</h3>
+  <aside class="notes">
+    Thanks! Happy to take questions on any layer — the memory allocator, BFS, ANSI codes, the multiplayer race fix, or the docs themselves.
+  </aside>
+</section>
+
+</div>
+</div>
+
+<!-- Reveal scripts -->
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash:true,
+    slideNumber:'c/t',
+    transition:'slide',
+    backgroundTransition:'fade',
+    controls:true,
+    progress:true,
+    center:false,
+    width: 1280,
+    height: 780,
+    margin: 0.06,
+    plugins:[ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>

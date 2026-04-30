@@ -28,6 +28,12 @@ These files are designed as a **learning path**. Read them **in order** — each
 
 ---
 
+## 🎤 Ready to present?
+
+Open **[`presentation.html`](presentation.html)** in any browser — a 22-slide self-contained deck (Reveal.js via CDN) covering the entire project with speaker notes (`S` key), code snippets, ASCII diagrams, and an animated gradient snake banner. Use ← / → to navigate, `F` for fullscreen, `S` to pop out speaker-notes view.
+
+---
+
 ## What is this project?
 
 A complete **terminal Snake game** written in C with **zero use of the standard library helpers** that beginners normally rely on:
