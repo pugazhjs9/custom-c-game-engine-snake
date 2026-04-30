@@ -1,147 +1,113 @@
-# c-snake-from-scratch
+# SnakeOS 🐍💻
 
-A real-time terminal Snake game written in C from the ground up — without relying on standard libraries like `string.h`, `math.h`, or `malloc`/`free`. Every core subsystem (memory allocation, string operations, math utilities, terminal rendering, and keyboard input) is implemented from scratch.
+SnakeOS is a modern, full-stack reimagining of the classic Snake game. Evolving from a low-level C engine, the project has been completely transformed into a rich web application. It features a unique "Operating System" visualizer, advanced AI opponents, and robust real-time multiplayer capabilities.
 
----
-
-## Demo
-
-[![Watch Demo](./assets/thumbnail.png)](./assets/demo.mp4)
-
-<video src="./assets/demo.mp4" controls width="600"></video>
+![SnakeOS Demo](./assets/thumbnail.png)
 
 ---
 
-## Features
+## ✨ Features
 
-- **Custom Memory Allocator** — A static-pool allocator with first-fit allocation, block splitting, and free-block coalescing. Replaces `malloc`/`free` entirely.
-- **Custom String Library** — Length, copy, compare, concat, split, and integer-to-string conversion. No dependency on `<string.h>`.
-- **Custom Math Library** — Arithmetic, clamping, bounds checking, and a Linear Congruential Generator (LCG) for pseudo-random numbers.
-- **Terminal Rendering Engine** — ANSI escape code abstraction for cursor positioning, color control, and flicker-free rendering via dirty-rectangle updates.
-- **Non-Blocking Keyboard Input** — Raw `termios` mode with `fcntl` for real-time, non-blocking key capture without external libraries.
-- **Linked-List Snake** — Dynamic growth via custom allocator. No fixed-size arrays or artificial length caps.
-- **Collision Detection** — Wall boundary checks and full self-collision detection via linked-list traversal.
-- **Score Tracking and Game States** — State machine with PLAYING, PAUSED, and GAMEOVER states.
+- **Real-Time Multiplayer** 🌐
+  - Server-authoritative architecture using **Socket.io**.
+  - Room-based matchmaking with synchronized game states.
+  - Comprehensive collision detection (self-collision and cross-player segmentation faults).
+  
+- **Advanced AI Opponents** 🤖
+  - Play against AI snakes utilizing different algorithms.
+  - Difficulty levels range from Random movement to Greedy heuristics and advanced **A* Pathfinding**.
 
----
+- **OS Internals Visualizer** ⚙️
+  - A unique simulation view that maps game events to OS-level concepts.
+  - Real-time visualization of Memory Allocation, CPU Scheduling, Thread Management, and System Calls as the game engine ticks.
 
-## Architecture
+- **Dynamic Gameplay Mechanics** 🍎
+  - Level progression system with increasing speeds.
+  - Special timed **Bonus Fruits** that spawn dynamically after eating consecutive standard fruits.
+  
+- **Global Leaderboards** 🏆
+  - Persistent score tracking backed by **PostgreSQL**.
+  - Filterable leaderboards by game mode (Solo, AI, Multiplayer) and time periods.
 
-![Architecture](./assets/c_module_architecture_fixed.svg)
-
-
-**Data flow per tick:**
-
-![Data Flow Per Tick](./assets/data_flow_per_tick_fixed.svg)
-
-
----
-
-## Controls
-
-| Key | Action |
-|-----|--------|
-| `W` or `Up Arrow` | Move Up |
-| `A` or `Left Arrow` | Move Left |
-| `S` or `Down Arrow` | Move Down |
-| `D` or `Right Arrow` | Move Right |
-| `Q` | Quit |
+- **Premium UI/UX** 🎨
+  - Built with modern web aesthetics using **Tailwind CSS** and **Framer Motion**.
+  - Features neon glow effects, glassmorphism components, and smooth micro-animations.
 
 ---
 
-## Build and Run
+## 🏗️ Architecture & Tech Stack
 
-**Prerequisites:** GCC and Make (macOS / Linux).
+SnakeOS is divided into a decoupled frontend and backend:
 
+### **Frontend**
+- **Framework**: Next.js 14+ (React)
+- **Styling**: Tailwind CSS, Framer Motion
+- **State Management**: Zustand
+- **Networking**: Socket.io-client
+- **Game Engine**: Custom TypeScript tick-based engine emitting OS-style simulation events.
+
+### **Backend**
+- **Environment**: Node.js
+- **Server**: Express.js
+- **WebSockets**: Socket.io (Handles server-authoritative multiplayer game loops)
+- **Database**: PostgreSQL (pg)
+
+---
+
+## 🚀 Getting Started
+
+Follow these instructions to get the project running locally.
+
+### Prerequisites
+- Node.js (v18 or newer)
+- PostgreSQL running locally or via a cloud provider
+
+### 1. Database Setup
+Ensure PostgreSQL is running and create a database for SnakeOS.
+```sql
+CREATE DATABASE snakeos;
+```
+
+### 2. Backend Setup
+Navigate to the backend directory, install dependencies, and start the server.
 ```bash
-make clean && make
-./snake
+cd backend
+npm install
+
+# Create a .env file (or set environment variables)
+# DATABASE_URL=postgres://user:password@localhost:5432/snakeos
+# PORT=3001
+
+npm run dev
 ```
+*Note: The backend will automatically initialize the required PostgreSQL tables on startup.*
 
-Or compile directly:
-
+### 3. Frontend Setup
+Open a new terminal, navigate to the frontend directory, install dependencies, and start the development server.
 ```bash
-gcc -Wall -Wextra -pedantic -std=c99 -I include -o snake \
-    src/memory.c src/string.c src/math.c src/screen.c \
-    src/keyboard.c src/game.c src/main.c
-./snake
+cd frontend
+npm install
+
+# Create a .env.local file
+# NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
+
+npm run dev
 ```
 
----
-
-## Project Structure
-
-```
-c-snake-from-scratch/
-├── include/
-│   ├── memory.h        Pool allocator API
-│   ├── string.h        Custom string operations
-│   ├── math.h          Arithmetic, bounds, PRNG
-│   ├── screen.h        ANSI terminal rendering
-│   ├── keyboard.h      Non-blocking input
-│   └── game.h          Game state, types, logic API
-├── src/
-│   ├── memory.c        64KB static pool, first-fit, coalescing
-│   ├── string.c        len, copy, compare, concat, split, itoa
-│   ├── math.c          abs, mul, div, mod, clamp, rand (LCG)
-│   ├── screen.c        Cursor, color, border, buffered flush
-│   ├── keyboard.c      termios raw mode, parsing multi-byte escape sequences
-│   ├── game.c          Snake logic, rendering, state machine
-│   └── main.c          Init, game loop, cleanup
-├── Makefile
-└── README.md
-```
+### 4. Play!
+Open your browser and navigate to `http://localhost:3000`.
 
 ---
 
-## Technical Highlights (For Recruiters)
+## 🎮 Game Modes
 
-This project demonstrates depth in several core areas of systems programming:
-
-**Low-Level Memory Management**
-- Designed and implemented a custom heap allocator from a static byte array
-- First-fit allocation strategy with block splitting and free-block coalescing
-- Zero reliance on `malloc`, `free`, or any dynamic memory API
-
-**Systems Programming**
-- Direct use of POSIX `termios` for terminal control (raw mode, echo suppression)
-- File descriptor manipulation via `fcntl` for non-blocking I/O
-- Explicit parsing of multi-byte ANSI escape sequences for Arrow Key support
-- ANSI escape code protocol for cursor movement and color rendering
-
-**Data Structures**
-- Snake body implemented as a singly linked list with dynamic allocation
-- Custom memory pool managed via an embedded free-list
-
-**Real-Time Systems Design**
-- Fixed-timestep game loop with chunked sleep for input responsiveness
-- Dirty-rectangle rendering strategy (only changed pixels are redrawn)
-- Fully buffered stdout for atomic frame presentation (no flicker)
-
-**Software Architecture**
-- Clean modular separation across 7 compilation units
-- Zero circular dependencies; layered dependency graph
-- Each module exposes a minimal public API through its header
+1. **Terminal Mode**: A retro, CLI-styled implementation of the game.
+2. **Solo Mode**: Classic gameplay with persistent high-score tracking.
+3. **AI Mode**: Compete against the computer on the same board.
+4. **Multiplayer**: Generate a room code and invite friends for real-time competitive Snake.
 
 ---
 
-## Known Limitations
-
-- Terminal window must be at least 40 columns wide and 22 rows tall.
-- No persistent high score storage.
-
----
-
-## Future Improvements
-
-- Difficulty levels with adjustable tick speed
-- Persistent high score file I/O
-- AI auto-play mode using pathfinding
-- Local multiplayer with split controls
-- Wraparound (borderless) game mode
-
----
-
-## License
+## 📜 License
 
 This project is open source and available under the MIT License.
