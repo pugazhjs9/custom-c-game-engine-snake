@@ -54,6 +54,15 @@ Controls:
 - Network multiplayer (TCP socket between two terminals)
 - Better AI: Hamiltonian-cycle "perfect" play, or look-ahead for self-trap avoidance
 
+## Snake visual upgrade (Apr 29, 2026)
+- Replaced line/corner glyphs (`═║╔╗╚╝`) with solid `█` blocks for snake body.
+- Per-segment **gradient color**: head = darkest, tail = lightest, sampled from an 8-step 256-color ramp.
+- **Time-cycling hue**: active ramp rotates every ~18 ticks through greens → cyans → blues → purples → reds → oranges. Implemented via `g->color_phase` advanced each tick + `paint_snake_gradient(...)` repaint after every move.
+- 2-player: P2 uses a `+3` ramp offset so the two snakes never share a hue.
+- Removed now-unused helpers `head_ch`, `seg_ch`, `redraw_old_head`, `redraw_snake`, `norm_d`.
+- Verified visually + via PTY harness (snake renders 32 `█` blocks + 113 distinct 256-color escapes per second of play).
+- Updated `docs/08-game.md` to describe the new rendering.
+
 ## Documentation pack (Apr 29, 2026)
 Created `/app/docs/` — 13 beginner-friendly .md files for someone who knows Python/JS but not C.
 Each covers What → Why → How → Line-by-line walkthrough → Diagrams → 📢 Presentation script.

@@ -58,6 +58,7 @@ typedef struct {
     int         tick_ms;
     int         base_tick_ms;
     int         winner;         /* 0 = none, 1 = P1, 2 = P2, 3 = draw       */
+    int         color_phase;    /* advances every tick — drives time-cycling hue */
 } Game;
 
 /* Lifecycle */

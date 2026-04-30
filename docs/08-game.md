@@ -265,29 +265,26 @@ A `★` appears randomly, lives for 50 ticks, gives 5 points.
 
 ## Rendering tricks
 
-### Snake bend characters
+### Solid-block gradient with time-cycling hue
 
-The body uses different glyphs depending on which way it bends:
+The snake is drawn as solid `█` (Unicode `U+2588`) blocks. Each segment's color comes from `snake_color_at(idx, len, phase, player_offset)`:
 
-```
-═     horizontal segment        ║     vertical segment
-╔     turn from right to down    ╗    turn from left to down
-╚     turn from right to up      ╝    turn from left to up
-```
-
-`seg_ch(prev, curr, next)` figures out which one to draw based on the direction from prev→curr→next:
+- **Head (idx 0) → darkest**, **tail (idx len-1) → lightest** within the active 8-step ramp.
+- The active ramp **rotates over time**: every `RAMP_TICKS_PER_SHIFT` ticks (~18 ticks ≈ a few seconds at normal speed) the snake cycles through greens → cyans → blues → purples → reds → oranges and back.
+- In 2-player mode P2 uses a different hue offset (`+3` ramps) so the two snakes never share a color.
 
 ```c
-if (d1y==0 && d2y==0) return CH_H;   // both moves horizontal → ═
-if (d1x==0 && d2x==0) return CH_V;   // both moves vertical   → ║
-... else compute which corner glyph by checking left/right/up/down direction
+static const int RAMPS[6][8] = {
+    {  22,  28,  34,  40,  46,  82, 118, 154 }, /* greens   */
+    {  23,  30,  37,  44,  51,  87, 123, 159 }, /* cyans    */
+    {  18,  19,  20,  21,  27,  33,  39,  45 }, /* blues    */
+    {  53,  54,  55,  56,  57,  99, 135, 171 }, /* purples  */
+    {  88, 124, 160, 196, 197, 203, 209, 217 }, /* reds     */
+    {  94, 130, 166, 172, 208, 214, 220, 223 }, /* oranges  */
+};
 ```
 
-### Render-order fix (from PRD)
-
-When the snake moves, the **previous head cell** must change from "head arrow" (`▲`/`▶`) to a body segment glyph (`═`/`╗`/etc.). Originally this was drawn **before** the new head was prepended → we'd render the wrong segment as a corner. The fix:
-
-> *"`redraw_old_head` now runs after the new head is prepended, so the demoted previous head gets the correct corner glyph instead of a segment two-back."*
+After every `game_update` we call `paint_snake_gradient(...)` which walks the snake and repaints each segment with its current gradient color — so the whole body smoothly shimmers as you play.
 
 ### Death animation
 

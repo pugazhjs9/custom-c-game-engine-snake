@@ -18,6 +18,7 @@
 #define CH_AL "\xe2\x97\x80"  /* ◀ */
 #define CH_AU "\xe2\x96\xb2"  /* ▲ */
 #define CH_AD "\xe2\x96\xbc"  /* ▼ */
+#define CH_BLOCK "\xe2\x96\x88"  /* █  full block — used for entire snake body */
 #define CH_FOOD  "\xe2\x97\x8f"  /* ● */
 #define CH_BONUS "\xe2\x98\x85"  /* ★ */
 #define CH_DOT   "\xe2\x80\xa2"  /* • */
@@ -51,29 +52,60 @@ static int difficulty_tick_ms(Difficulty d) {
     return 130; /* HARD */
 }
 
-/* ── Direction normalisation ── */
-static int norm_d(int d) { if (d > 1) return -1; if (d < -1) return 1; return d; }
+/* ── Gradient color ramps (256-color palette) ──
+ * Each ramp: 8 colors from DARKEST (head) → LIGHTEST (tail).
+ * The active ramp rotates over time, giving a slow rainbow cycle.
+ * Player 2 in multi-mode uses a different ramp offset for visual distinction.
+ */
+#define RAMP_LEN 8
+#define RAMP_COUNT 6
+#define RAMP_TICKS_PER_SHIFT 18    /* lower = faster color change */
 
-static const char *head_ch(Direction d) {
-    if (d == DIR_UP)   return CH_AU;
-    if (d == DIR_DOWN) return CH_AD;
-    if (d == DIR_LEFT) return CH_AL;
-    return CH_AR;
+static const int RAMPS[RAMP_COUNT][RAMP_LEN] = {
+    {  22,  28,  34,  40,  46,  82, 118, 154 }, /* greens */
+    {  23,  30,  37,  44,  51,  87, 123, 159 }, /* cyans */
+    {  18,  19,  20,  21,  27,  33,  39,  45 }, /* blues */
+    {  53,  54,  55,  56,  57,  99, 135, 171 }, /* purples */
+    {  88, 124, 160, 196, 197, 203, 209, 217 }, /* reds/pink */
+    {  94, 130, 166, 172, 208, 214, 220, 223 }, /* oranges */
+};
+
+/* Map (segment index, snake length, time phase) → 256-color code.
+ * idx=0 is head (darkest); idx=len-1 is tail (lightest).
+ * `phase` shifts which ramp is active over time.
+ * `player_offset` shifts P2 onto a different hue.
+ */
+static int snake_color_at(int idx, int len, int phase, int player_offset) {
+    int ramp_idx = ((phase / RAMP_TICKS_PER_SHIFT) + player_offset) % RAMP_COUNT;
+    int pos;
+    if (len <= 1) {
+        pos = 0;
+    } else {
+        pos = math_div(math_mul(idx, RAMP_LEN - 1), len - 1);
+    }
+    if (pos < 0) pos = 0;
+    if (pos > RAMP_LEN - 1) pos = RAMP_LEN - 1;
+    return RAMPS[ramp_idx][pos];
 }
 
-static const char *seg_ch(int px,int py,int cx,int cy,int nx,int ny) {
-    int d1x=norm_d(cx-px),d1y=norm_d(cy-py),d2x=norm_d(nx-cx),d2y=norm_d(ny-cy);
-    int L,R,U,D;
-    if(d1y==0&&d2y==0) return CH_H;
-    if(d1x==0&&d2x==0) return CH_V;
-    L=(d1x>0)||(d2x<0); R=(d1x<0)||(d2x>0);
-    U=(d1y>0)||(d2y<0); D=(d1y<0)||(d2y>0);
-    if(R&&D) return CH_TL;
-    if(L&&D) return CH_TR;
-    if(R&&U) return CH_BL;
-    if(L&&U) return CH_BR;
-    return CH_H;
+/* Walk the snake and repaint every segment with the gradient block char. */
+static void paint_snake_gradient(const Snake *s, int phase, int player_offset) {
+    Segment *c;
+    int idx = 0;
+    if (!s || !s->head || !s->alive) return;
+    c = s->head;
+    while (c) {
+        int color = snake_color_at(idx, s->length, phase, player_offset);
+        screen_set_color_256(color, -1);
+        screen_put_utf8(c->x, c->y, CH_BLOCK);
+        idx++;
+        c = c->next;
+    }
+    screen_reset_color();
 }
+
+/* (helpers head_ch / seg_ch / norm_d removed — snake now drawn as solid
+ * gradient blocks via paint_snake_gradient) */
 
 /* ── Snake helpers ── */
 static int snake_contains(const Snake *s, int x, int y) {
@@ -326,6 +358,7 @@ void game_init(Game *g) {
     g->bonus_timer  = 0;
     g->ticks_since_food = 0;
     g->winner = 0;
+    g->color_phase = 0;
 
     if (g->mode == MODE_MULTI) {
         int cy = math_div(g->board_h, 2);
@@ -397,25 +430,6 @@ static int compute_next_head(const Snake *s, const Game *g, Point *out) {
     out->x = nx;
     out->y = ny;
     return d;
-}
-
-static void redraw_old_head(const Snake *s, int new_head_x, int new_head_y) {
-    /* Called AFTER apply_move has prepended the new head:
-     *   s->head            → newly-added head
-     *   s->head->next      → former head (now a body link)
-     *   s->head->next->next → segment after that (or NULL)
-     */
-    Segment *old_h = s->head->next;
-    if (!old_h) return;
-    screen_set_color_256(s->color_body, -1);
-    if (old_h->next) {
-        screen_put_utf8(old_h->x, old_h->y,
-            seg_ch(new_head_x, new_head_y, old_h->x, old_h->y, old_h->next->x, old_h->next->y));
-    } else {
-        int dy = norm_d(old_h->y - new_head_y);
-        screen_put_utf8(old_h->x, old_h->y, (dy == 0) ? CH_H : CH_V);
-    }
-    screen_reset_color();
 }
 
 static void apply_move(Snake *s, Point new_head, int grew, int *erased_x, int *erased_y) {
@@ -563,11 +577,7 @@ void game_update(Game *g) {
 
     /* ── Advance P1 ── */
     {
-        screen_set_color_256(g->p1.color_head, -1);
-        screen_put_utf8(np1.x, np1.y, head_ch(g->p1.dir));
-        screen_reset_color();
         apply_move(&g->p1, np1, p1_grew, &erased_x, &erased_y);
-        redraw_old_head(&g->p1, np1.x, np1.y);
         if (erased_x >= 0) { screen_reset_color(); screen_put_char(erased_x, erased_y, ' '); }
         if (ate_food_p1) {
             g->p1.score += 1;
@@ -582,11 +592,7 @@ void game_update(Game *g) {
 
     /* ── Advance P2 ── */
     if (g->mode == MODE_MULTI) {
-        screen_set_color_256(g->p2.color_head, -1);
-        screen_put_utf8(np2.x, np2.y, head_ch(g->p2.dir));
-        screen_reset_color();
         apply_move(&g->p2, np2, p2_grew, &erased_x, &erased_y);
-        redraw_old_head(&g->p2, np2.x, np2.y);
         if (erased_x >= 0) { screen_reset_color(); screen_put_char(erased_x, erased_y, ' '); }
         if (ate_food_p2) {
             g->p2.score += 1;
@@ -597,6 +603,16 @@ void game_update(Game *g) {
             g->bonus_active = 0; g->bonus_timer = 0;
             g->tick_ms = math_max(g->tick_ms - math_mul(SPEED_DECREASE, 2), MIN_TICK_MS);
         }
+    }
+
+    /* ── Time-cycling gradient repaint ──
+     * After both moves are committed, advance the color phase and repaint
+     * each snake from head (darkest) → tail (lightest). The active hue
+     * rotates every RAMP_TICKS_PER_SHIFT ticks. */
+    g->color_phase++;
+    paint_snake_gradient(&g->p1, g->color_phase, 0);
+    if (g->mode == MODE_MULTI) {
+        paint_snake_gradient(&g->p2, g->color_phase, 3); /* offset hue */
     }
 
     /* High score: max of either snake's score in this run */
@@ -673,33 +689,6 @@ int game_is_running(const Game *g) {
 }
 
 /* ── Full redraw (after resize or fresh start) ── */
-static void redraw_snake(const Snake *s, Direction global_dir) {
-    Segment *prev = (Segment *)0, *curr, *next;
-    int idx = 0;
-    if (!s || !s->head) return;
-    curr = s->head;
-    while (curr) {
-        next = curr->next;
-        if (idx == 0) {
-            screen_set_color_256(s->color_head, -1);
-            screen_put_utf8(curr->x, curr->y, head_ch(global_dir));
-        } else {
-            screen_set_color_256(s->color_body, -1);
-            if (prev && next) {
-                screen_put_utf8(curr->x, curr->y,
-                    seg_ch(prev->x, prev->y, curr->x, curr->y, next->x, next->y));
-            } else if (prev) {
-                int dy = norm_d(curr->y - prev->y);
-                screen_put_utf8(curr->x, curr->y, (dy == 0) ? CH_H : CH_V);
-            } else {
-                screen_put_utf8(curr->x, curr->y, CH_H);
-            }
-        }
-        screen_reset_color();
-        prev = curr; curr = next; idx++;
-    }
-}
-
 void game_full_redraw(Game *g) {
     if (!g) return;
     screen_clear();
@@ -709,8 +698,8 @@ void game_full_redraw(Game *g) {
     draw_title(g);
 
     if (g->state == STATE_PLAYING) {
-        redraw_snake(&g->p1, g->p1.dir);
-        if (g->mode == MODE_MULTI) redraw_snake(&g->p2, g->p2.dir);
+        paint_snake_gradient(&g->p1, g->color_phase, 0);
+        if (g->mode == MODE_MULTI) paint_snake_gradient(&g->p2, g->color_phase, 3);
 
         screen_set_color_256(CLR_FOOD, -1);
         screen_put_utf8(g->food.x, g->food.y, CH_FOOD);
